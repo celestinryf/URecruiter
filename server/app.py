@@ -15,9 +15,9 @@ CORS(app, resources={r"/api/*": {"origins": "http://localhost:5173"}}, supports_
 def generateDesc():
     JobDescriptionGenerator.generate(title=, company=, keywords=, experience=)
 
-@app.post("/generate-post", methods=["POST"])
-def generatePost():
-    postJob()
+# @app.post("/generate-post", methods=["POST"])
+# def generatePost():
+#     postJob()
 
 if __name__ == "__main__":
     app.run(debug=True)
