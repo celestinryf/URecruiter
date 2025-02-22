@@ -12,3 +12,5 @@ langchain-fmp-data
 pypdf2
 python-docx
 selenium
+sqlalchemy
+psycopg2-binary
