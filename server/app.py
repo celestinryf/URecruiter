@@ -11,11 +11,11 @@ app = Flask(__name__)
 
 CORS(app, resources={r"/api/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
 
-@app.get("/generate-description", methods=["POST"])
+@app.post("/generate-description", methods=["POST"])
 def generateDesc():
     JobDescriptionGenerator.generate(title=, company=, keywords=, experience=)
 
-@app.route("/generate-post", methods=["POST"])
+@app.post("/generate-post", methods=["POST"])
 def generatePost():
     postJob()
 
