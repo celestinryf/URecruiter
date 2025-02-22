@@ -1,29 +1,20 @@
-from flask import Flask
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
-from generate_description import app as generate_description_app
-# from jobpost import postJob
+import os
 
 load_dotenv()
 
 app = Flask(__name__)
 
-# Correct CORS configuration
-CORS(app, resources={
-    r"/api/*": {
-        "origins": ["http://localhost:5173"],
-        "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type"],
-        "supports_credentials": True  # Note the correct key name
-    }
-})
+# Explicit CORS configuration: Allow all origins or only specific ones
+CORS(app, origins="http://localhost:5173", methods=["GET", "POST"])
 
-# Register the routes
-app.register_blueprint(generate_description_app)
-
-# @app.route("/api/generate-post", methods=["POST"])
-# def generatePost():
-#     return postJob()
+@app.route('/api/generate', methods=['POST'])
+def generate():
+    data = request.get_json()
+    print(data)
+    return jsonify(message="Data received", data=data), 200
 
 if __name__ == "__main__":
     app.run(debug=True)
