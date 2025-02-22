@@ -2,104 +2,81 @@ from flask import Blueprint, request, jsonify
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
-import anthropic
-import logging
-import traceback
+from langchain_community.llms import OpenAI
+from langchain.chains import LLMChain
+from langchain.prompts import PromptTemplate
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-
-# Load environment variables from .env file
+# Load environment variables
 load_dotenv()
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-if not ANTHROPIC_API_KEY:
-    logger.error("No Anthropic API key found in environment variables")
-    raise ValueError("ANTHROPIC_API_KEY not found in .env file")
+# Create Blueprint
+generate_description_app = Blueprint('generate_description', __name__)
 
-# Create blueprint
-app = Blueprint('generate_description', __name__)
+# Apply CORS to this specific blueprint
+CORS(generate_description_app, resources={r"/api/*": {"origins": "http://localhost:5173"}})
+
+# Check if API key is available
+if not OPENAI_API_KEY:
+    print("⚠️ ERROR: OPENAI_API_KEY is missing. Please check your .env file.")
 
 class JobDescriptionGenerator:
     def __init__(self):
         try:
-            logger.debug("Initializing JobDescriptionGenerator")
-            self.client = anthropic.Client(api_key=ANTHROPIC_API_KEY)
-            self.template = """Create a professional job description for the following:
-            
-            Job Title: {title}
-            Company: {company}
-            Keywords: {keywords}
-            Experience Level: {experience}
-            
-            Include sections for: Company Overview, Job Description, Requirements, Benefits.
-            Keep it professional and engaging. Format with appropriate Markdown.
-            """
-            logger.debug("JobDescriptionGenerator initialized successfully")
-        except Exception as e:
-            logger.error(f"Error initializing JobDescriptionGenerator: {str(e)}")
-            logger.error(traceback.format_exc())
-            raise
-    
-    def generate(self, title, company, keywords, experience):
-        try:
-            logger.debug(f"Generating description for job: {title} at {company}")
-            logger.debug(f"Keywords: {keywords}")
-            logger.debug(f"Experience: {experience}")
-            
-            prompt = self.template.format(
-                title=title,
-                company=company,
-                keywords=keywords,
-                experience=experience
-            )
-            
-            message = self.client.messages.create(
-                model="claude-3-opus-20240229",
-                max_tokens=1500,
-                temperature=0.7,
-                messages=[
-                    {"role": "user", "content": prompt}
-                ]
-            )
-            
-            logger.debug("Job description generated successfully")
-            return message.content[0].text
-        except Exception as e:
-            logger.error(f"Error generating job description: {str(e)}")
-            logger.error(traceback.format_exc())
-            raise
+            if not OPENAI_API_KEY:
+                raise ValueError("OPENAI_API_KEY is missing. Ensure it's set in the .env file.")
 
-@app.route('/api/generate-description', methods=['POST'])
+            self.llm = OpenAI(temperature=0.7, openai_api_key=OPENAI_API_KEY)  # Ensure API key is passed
+            self.template = PromptTemplate(
+                input_variables=["title", "company", "keywords", "experience"],
+                template="""Create a professional job description for the following:
+                
+                Job Title: {title}
+                Company: {company}
+                Keywords: {keywords}
+                Experience Level: {experience}
+                
+                Include sections for: Company Overview, Job Description, Requirements, Benefits.
+                Keep it professional and engaging. Format with appropriate Markdown.
+                """
+            )
+            self.chain = LLMChain(llm=self.llm, prompt=self.template)
+
+        except Exception as e:
+            print("❌ Error initializing JobDescriptionGenerator:", str(e))
+            self.chain = None  # Prevent further issues if initialization fails
+
+    def generate(self, title, company, keywords, experience):
+        if not self.chain:
+            raise RuntimeError("❌ JobDescriptionGenerator is not initialized properly.")
+        return self.chain.run(
+            title=title,
+            company=company,
+            keywords=keywords,
+            experience=experience
+        )
+
+@generate_description_app.route('/generate-description', methods=['POST'])
 def generate_description():
     try:
-        logger.debug("Received generate-description request")
-        logger.debug(f"Request data: {request.json}")
-
+        # Get data from request
         data = request.json
-        if not data:
-            logger.error("No JSON data in request")
-            return jsonify({'error': 'No data provided'}), 400
 
+        # Extract form fields
         title = data.get('jobTitle')
         company = data.get('companyName')
         keywords = data.get('keywords', [])
         experience = data.get('experience')
 
-        logger.debug(f"Extracted fields - Title: {title}, Company: {company}, Keywords: {keywords}, Experience: {experience}")
-
+        # Validate required fields
         if not all([title, company, experience]):
-            missing_fields = []
-            if not title: missing_fields.append('jobTitle')
-            if not company: missing_fields.append('companyName')
-            if not experience: missing_fields.append('experience')
-            
-            error_msg = f"Missing required fields: {', '.join(missing_fields)}"
-            logger.error(error_msg)
-            return jsonify({'error': error_msg}), 400
-            
+            return jsonify({'error': 'Missing required fields'}), 400
+
+        # Generate job description
         generator = JobDescriptionGenerator()
+        if not generator.chain:
+            return jsonify({'error': 'Failed to initialize JobDescriptionGenerator'}), 500
+
         description = generator.generate(
             title=title,
             company=company,
@@ -107,25 +84,20 @@ def generate_description():
             experience=experience
         )
 
-        logger.debug("Successfully generated job description")
         return jsonify({'description': description})
 
+    except RuntimeError as re:
+        print("❌ Runtime Error:", str(re))
+        return jsonify({'error': 'Internal Server Error', 'details': str(re)}), 500
     except Exception as e:
-        error_msg = f"Error in generate_description: {str(e)}\n{traceback.format_exc()}"
-        logger.error(error_msg)
-        return jsonify({
-            'error': 'Failed to generate description',
-            'details': str(e),
-            'trace': traceback.format_exc()
-        }), 500
+        print("🔥 SERVER ERROR:", str(e))  # Print error for debugging
+        return jsonify({'error': 'Internal Server Error', 'details': str(e)}), 500
 
-# Add error handler for the blueprint
-@app.errorhandler(Exception)
-def handle_error(e):
-    logger.error(f"Unhandled exception: {str(e)}")
-    logger.error(traceback.format_exc())
-    return jsonify({
-        'error': 'An unexpected error occurred',
-        'details': str(e),
-        'trace': traceback.format_exc()
-    }), 500
+# Manually handle OPTIONS requests to prevent CORS preflight issues
+@generate_description_app.route('/generate-description', methods=['OPTIONS'])
+def handle_options():
+    response = jsonify({'message': 'OK'})
+    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:5173')
+    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+    return response
