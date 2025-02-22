@@ -65,9 +65,19 @@ engine = create_engine(DATABASE_URL, echo=True)
 
 SessionLocal = sessionmaker(bind=engine)
 
+def drop_tables():
+    try:
+        Base.metadata.drop_all(bind=engine)
+        print("All tables dropped successfully!")
+    except Exception as e:
+        print(f"Error dropping tables: {e}")
+
 def create_tables():
-    Base.metadata.create_all(bind=engine)
-    print("Database tables created successfully!")
+    try:
+        Base.metadata.create_all(bind=engine)
+        print("Database tables created successfully!")
+    except Exception as e:
+        print(f"Error creating tables: {e}")
 
 def seed_sample_data():
     session = SessionLocal()
@@ -109,9 +119,12 @@ def seed_sample_data():
     except Exception as e:
         session.rollback()
         print(f"Error adding sample data: {e}")
+        import traceback
+        traceback.print_exc()
     finally:
         session.close()
 
 if __name__ == "__main__":
+    drop_tables()
     create_tables()
     seed_sample_data()
