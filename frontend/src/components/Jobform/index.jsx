@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axios from 'axios'
 
 const Jobform = () => {
     const [formData, setFormData] = useState({
@@ -29,31 +30,26 @@ const Jobform = () => {
         e.preventDefault();
         setLoading(true);
         setError('');
-        
+    
         try {
-            const response = await fetch('http://127.0.0.1:5000/api/generate-description', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                credentials: 'same-origin',
-                body: JSON.stringify(formData)
-            });
-            
-            if (!response.ok) {
+            const response = await axios.post('http://127.0.0.1:5000/api/generate', formData);
+    
+            // Check if the response is OK
+            if (response.status === 200) {
+                console.log('Response:', response.data);
+                // If you have some logic to handle the response, do it here
+                // setDescription(response.data.description);
+            } else {
                 throw new Error('Failed to generate description');
             }
-            
-            const data = await response.json();
-            setDescription(data.description);
         } catch (err) {
-            console.error('Fetch error:', err);
+            console.error('Error:', err);
             setError(err.message);
         } finally {
             setLoading(false);
         }
     };
+    
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
