@@ -1,0 +1,11 @@
+Flask
+openai
+langchain
+langchain-community
+langchain-google-firestore
+python-dotenv
+langchain-openai
+duckduckgo-search
+flask-cors
+requests
+langchain-fmp-data
