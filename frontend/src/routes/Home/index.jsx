@@ -7,13 +7,11 @@ const appName = "Universal Wealth";
 const Home = () => {
     return (
         <div className={style.layoutWrapper}>
-            <NavBar />
             <div className={style.mainContent}>
                 <div className={style.container}>
                     <JobDescriptionForm />
                 </div>
             </div>
-            <Footer />
         </div>
     );
 }
