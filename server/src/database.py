@@ -1,76 +1,117 @@
 import os
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, Enum
+from sqlalchemy import create_engine
+from sqlalchemy.orm import relationship, sessionmaker, declarative_base
+from sqlalchemy.sql import func
 from dotenv import load_dotenv
+import enum
 
-# Load environment variables from .env file
 load_dotenv()
 
-# Database configuration using environment variables
+Base = declarative_base()
+
+class UserRole(enum.Enum):
+    RECRUITER = "recruiter"
+    CANDIDATE = "candidate"
+
+class ApplicationStatus(enum.Enum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+
+class User(Base):
+    __tablename__ = 'users'
+
+    id = Column(Integer, primary_key=True)
+    username = Column(String, unique=True, nullable=False)
+    name = Column(String, nullable=False)
+    email = Column(String, unique=True, nullable=False)
+    role = Column(Enum(UserRole), nullable=False)
+    
+    applications = relationship("JobApplication", back_populates="user")
+
+class JobPosting(Base):
+    __tablename__ = 'job_postings'
+
+    id = Column(Integer, primary_key=True)
+    title = Column(String, nullable=False)
+    company = Column(String, nullable=False)
+    description = Column(Text, nullable=False)
+    
+    applications = relationship("JobApplication", back_populates="job_posting")
+
+class JobApplication(Base):
+    __tablename__ = 'job_applications'
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    job_posting_id = Column(Integer, ForeignKey('job_postings.id'), nullable=False)
+    resume_path = Column(String, nullable=True)
+    applied_at = Column(DateTime(timezone=True), server_default=func.now())
+    status = Column(Enum(ApplicationStatus), default=ApplicationStatus.PENDING)
+    
+    user = relationship("User", back_populates="applications")
+    job_posting = relationship("JobPosting", back_populates="applications")
+
 DB_USERNAME = os.getenv('DB_USERNAME', 'postgres')
 DB_PASSWORD = os.getenv('DB_PASSWORD', '')
 DB_HOST = os.getenv('DB_HOST', 'localhost')
 DB_PORT = os.getenv('DB_PORT', '5432')
 DB_NAME = os.getenv('DB_NAME', 'recruitment_db')
 
-# Construct the DATABASE_URL
 DATABASE_URL = f"postgresql://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
-# Create SQLAlchemy engine with additional configuration
-engine = create_engine(
-    DATABASE_URL,
-    echo=True,  # Set to False in production
-    pool_pre_ping=True,  # Test connections before using them
-    pool_recycle=3600,   # Recycle connections after 1 hour
-)
+engine = create_engine(DATABASE_URL, echo=True)
 
-# Create a configured "Session" class
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal = sessionmaker(bind=engine)
 
-# Base class for declarative models
-Base = declarative_base()
+def create_tables():
+    Base.metadata.create_all(bind=engine)
+    print("Database tables created successfully!")
 
-def test_database_connection():
-    """
-    Test the database connection.
+def seed_sample_data():
+    session = SessionLocal()
     
-    Returns:
-    - True if connection is successful
-    - False if connection fails
-    - Prints additional error information if connection fails
-    """
     try:
-        # Create a connection
-        with engine.connect() as connection:
-            # Execute a simple query to test the connection
-            result = connection.execute(text("SELECT 1"))
-            
-            # Fetch the result to ensure it works
-            scalar_result = result.scalar()
-            
-            # If we get here, connection is successful
-            print("🟢 Database connection successful!")
-            print(f"Test query result: {scalar_result}")
-            return True
-    
-    except SQLAlchemyError as e:
-        # Handle specific SQLAlchemy errors
-        print("🔴 Failed to connect to the database.")
-        return False
-
-def get_db():
-    """
-    Dependency that creates a new database session for each request 
-    and closes it after the request is completed.
-    """
-    db = SessionLocal()
-    try:
-        yield db
+        recruiter = User(
+            username="recruiter1",
+            name="Jane Smith", 
+            email="jane@company.com",
+            role=UserRole.RECRUITER
+        )
+        session.add(recruiter)
+        
+        user = User(
+            username="johndoe",
+            name="John Doe", 
+            email="john@example.com",
+            role=UserRole.CANDIDATE
+        )
+        session.add(user)
+        
+        job_posting = JobPosting(
+            title="Software Engineer",
+            company="Tech Startup",
+            description="Exciting opportunity for a passionate developer!"
+        )
+        session.add(job_posting)
+        
+        job_application = JobApplication(
+            user=user,
+            job_posting=job_posting,
+            resume_path="/path/to/resume.pdf",
+            status=ApplicationStatus.PENDING
+        )
+        session.add(job_application)
+        
+        session.commit()
+        print("Sample data added successfully!")
+    except Exception as e:
+        session.rollback()
+        print(f"Error adding sample data: {e}")
     finally:
-        db.close()
+        session.close()
 
-# Optional: Automatically test connection when this module is run
 if __name__ == "__main__":
-    test_database_connection()
+    create_tables()
+    seed_sample_data()
