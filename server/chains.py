@@ -33,13 +33,15 @@ def get_available_times(candidate, interviewer, job_description):
         Get and return the body of all email replies that subject's are Interview Availability.
         From the email: {email_1} and email: {email_2}. Return only the bodies of the email reply.
         Parse the email replies to check for matching times written in the body. If there are matching times
-        pick a single time and output only the matched time.
+        pick a single time and output only the matched time. If there is not a matched time peform this function: {function}
+        and break out of the current function.
         """)
     
     get_email_chain = get_prompt | agent
 
 
-    time = get_email_chain.invoke({"email_1": candidate, "email_2": interviewer})['output']
+    time = get_email_chain.invoke({"email_1": candidate, "email_2": interviewer, "function": send_available_email(candidate, interviewer, job_description)})['output']
+
 
     input_data = {
         "message": {
@@ -62,4 +64,3 @@ def get_available_times(candidate, interviewer, job_description):
     res = send_email_chain.invoke({"attributes": input_data, "date": time, "job_description": job_description})
 
     return agent.invoke("Send this email: " + res['output'])
-

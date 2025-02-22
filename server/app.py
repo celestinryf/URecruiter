@@ -2,13 +2,13 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
 from generate_description import JobDescriptionGenerator
-import os
+from chains import send_available_email
 
 load_dotenv()
 
 app = Flask(__name__)
 
-CORS(app, origins="http://localhost:5173", methods=["GET", "POST"])
+CORS(app)
 
 @app.route('/api/generate', methods=['POST'])
 def generate_description():
@@ -45,6 +45,22 @@ def generate_description():
     except Exception as e:
         print("SERVER ERROR:", str(e))  # Print error for debugging
         return jsonify({'error': 'Internal Server Error', 'details': str(e)}), 500
+@app.route('/api/send-a', methods=["POST"])
+def route():
+
+    try:
+        req = request.get_json()
+        candidate = req['candidate']
+        interviewer = req['interviewer']
+        desc = req['description']
+
+
+        send_available_email(candidate, interviewer, desc)
+
+        return 200
+    except Exception as e:
+        return jsonify({"Error":str(e)})
+
 
 if __name__ == "__main__":
     app.run(debug=True)

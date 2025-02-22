@@ -30,7 +30,3 @@ tools = toolkit.get_tools()
 tools.append(tav_tool)
 
 agent = initialize_agent(tools=tools, llm=llm, agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
-
-
-
-
