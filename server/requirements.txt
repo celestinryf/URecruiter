@@ -9,3 +9,5 @@ duckduckgo-search
 flask-cors
 requests
 langchain-fmp-data
+pypdf2
+python-docx
