@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const JobDescriptionForm = () => {
+const Jobform = () => {
     const [formData, setFormData] = useState({
         jobTitle: '',
         companyName: '',
@@ -8,7 +8,9 @@ const JobDescriptionForm = () => {
         experience: ''
     });
     const [currentKeyword, setCurrentKeyword] = useState('');
-    const [showOutput, setShowOutput] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [description, setDescription] = useState('');
+    const [error, setError] = useState('');
 
     const handleKeywordKeyPress = (e) => {
         if (e.key === 'Enter') {
@@ -23,9 +25,34 @@ const JobDescriptionForm = () => {
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        setShowOutput(true);
+        setLoading(true);
+        setError('');
+        
+        try {
+            const response = await fetch('http://127.0.0.1:5000/api/generate-description', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify(formData)
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to generate description');
+            }
+            
+            const data = await response.json();
+            setDescription(data.description);
+        } catch (err) {
+            console.error('Fetch error:', err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleInputChange = (e) => {
@@ -34,22 +61,6 @@ const JobDescriptionForm = () => {
             ...formData,
             [name]: value
         });
-    };
-
-    const renderOutput = () => {
-        return (
-            <div className="mt-8 p-4 bg-gray-100 rounded font-mono">
-                <div>===== Job Description Generator =====</div>
-                <div>Enter job title: {formData.jobTitle}</div>
-                <div>Enter company name: {formData.companyName}</div>
-                <div>Enter job keywords (one per line, enter blank line when done):</div>
-                {formData.keywords.map((keyword, index) => (
-                    <div key={index}>&gt; {keyword}</div>
-                ))}
-                <div>&gt;</div>
-                <div>Enter required experience (e.g., '2-3 years'): {formData.experience}</div>
-            </div>
-        );
     };
 
     return (
@@ -124,15 +135,26 @@ const JobDescriptionForm = () => {
 
                 <button
                     type="submit"
-                    className="mt-4 w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    disabled={loading}
+                    className={`mt-4 w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                    Generate Description
+                    {loading ? 'Generating...' : 'Generate Description'}
                 </button>
             </form>
 
-            {showOutput && renderOutput()}
+            {error && (
+                <div className="mt-4 p-4 bg-red-100 text-red-700 rounded">
+                    {error}
+                </div>
+            )}
+
+            {description && (
+                <div className="mt-8 p-4 bg-gray-100 rounded">
+                    <pre className="whitespace-pre-wrap">{description}</pre>
+                </div>
+            )}
         </div>
     );
 };
 
-export default JobDescriptionForm;
+export default Jobform;
