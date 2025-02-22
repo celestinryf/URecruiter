@@ -58,11 +58,6 @@ def test_database_connection():
     except SQLAlchemyError as e:
         # Handle specific SQLAlchemy errors
         print("🔴 Failed to connect to the database.")
-        print(f"Error details: {e}")
-        print("\nTroubleshooting tips:")
-        print("1. Check if PostgreSQL is running")
-        print("2. Verify DATABASE_URL credentials")
-        print("3. Ensure the database exists")
         return False
 
 def get_db():
