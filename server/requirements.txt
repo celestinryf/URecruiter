@@ -3,6 +3,7 @@ openai
 langchain
 langchain-community
 langchain-google-firestore
+langchain-google-community
 python-dotenv
 langchain-openai
 duckduckgo-search
