@@ -1,43 +1,62 @@
+/* Reset all margins and padding */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  background-color: #f0f0f0;
+  overflow-x: hidden;
+}
+
+/* Remove any default margins that might cause gaps */
+body {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Mobile container with no gaps */
 #root {
-  max-width: 1280px;
+  width: 100%;
+  max-width: 480px;
   margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-  background-color: black;
+  height: 100%;
+  background-color: white;
+  position: relative;
+  overflow-x: hidden;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+/* On larger screens, create the mobile phone look */
+@media (min-width: 481px) {
+  html, body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
-  to {
-    transform: rotate(360deg);
+  
+  #root {
+    height: 100%; /* Changed from 100vh to 100% */
+    max-height: 850px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    border-radius: 20px;
+    overflow: hidden;
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+/* Remove all default margins/padding from common elements */
+h1, h2, h3, h4, h5, h6, p, ul, ol, figure {
+  margin: 0;
+  padding: 0;
 }
 
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
+/* Consistent button styling */
+button {
+  font-family: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
 }

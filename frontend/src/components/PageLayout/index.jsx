@@ -1,21 +1,19 @@
 import React from 'react';
 import Navbar from '../Navbar';
-import Footer from '../Footer';
+import Header from '../Header';
 import styles from './pagelayout.module.css';
 
 const PageLayout = ({ 
     children, 
-    showFooter = true 
+    showHeader = true 
 }) => {
     return (
         <div className={styles.layoutContainer}>
-            <div className={styles.navbar}>
-                <Navbar />
-            </div>
+            {showHeader && <Header className={styles.header} />}
             <main className={styles.mainContent}>
                 {children}
             </main>
-            {showFooter && <Footer />}
+            <Navbar className={styles.navbar} />
         </div>
     );
 };

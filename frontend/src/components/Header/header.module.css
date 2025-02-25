@@ -1,0 +1,30 @@
+.header {
+    background-color: white;
+    text-align: center;
+    width: 100%;
+    padding: 0 2rem; /* Added padding from the sides */
+    max-width: 480px;
+    box-sizing: border-box;
+    margin: 0 auto; /* Center the header */
+    position: relative;
+    top: 0;
+    left: 0;
+    height: 8vh;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.title {
+    color: #8B5CF6;
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.filterIcon {
+    cursor: pointer;
+    color: #8B5CF6;
+    width: 24px;
+    height: 24px;
+}
