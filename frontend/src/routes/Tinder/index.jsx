@@ -1,20 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { Heart, X, ChevronUp, UserRound, Briefcase, CheckCircle } from 'lucide-react';
+import { Heart, X, ChevronUp, UserRound, Briefcase, CheckCircle, FileText } from 'lucide-react';
 import styles from './tinder.module.css';
 
 const Tinder = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { pdfUrl, jobDetails } = location.state || {};
+    // Get jobDetails from location.state but use a static PDF path
+    const { jobDetails } = location.state || {};
+    
+    // Use a static path to the PDF in your public folder
+    const staticPdfPath = "/Celestin_Ryf_Resume.pdf"; // Path to the resume PDF
     
     const [rotation, setRotation] = useState(0);
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = useState(false);
     const [startPos, setStartPos] = useState({ x: 0, y: 0 });
     const [decision, setDecision] = useState(null);
-    const [showInfo, setShowInfo] = useState(false);
+    const [showPdf, setShowPdf] = useState(false);
     const [emailSent, setEmailSent] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const cardRef = useRef(null);
@@ -22,7 +26,9 @@ const Tinder = () => {
     // Additional demo data
     const candidateName = "John Smith";
     const candidateLocation = "San Francisco, CA";
-    const candidateAge = "28";
+    const candidateYears = "5+ years";
+    const currentRole = "Senior Frontend Developer";
+    const currentCompany = "TechCorp Inc.";
 
     useEffect(() => {
         if (decision) {
@@ -38,12 +44,7 @@ const Tinder = () => {
     }, [decision]);
     
     const handleLeft = () => {
-        // Clean up the URL object
-        if (pdfUrl) {
-            URL.revokeObjectURL(pdfUrl);
-        }
-        
-        // Reload the page to get a new resume
+        // Simply reload the page to get a new resume
         window.location.reload();
     };
 
@@ -62,10 +63,6 @@ const Tinder = () => {
             
             const response = await axios.post('http://127.0.0.1:5000/api/send-a', formData);
             
-            // Clean up the URL object
-            if (pdfUrl) {
-                URL.revokeObjectURL(pdfUrl);
-            }
             console.log("API Response:", response);
             
             // Show successful email notification
@@ -159,18 +156,13 @@ const Tinder = () => {
         }
     };
 
-    const toggleInfo = () => {
-        setShowInfo(!showInfo);
+    const togglePdf = () => {
+        setShowPdf(!showPdf);
     };
 
     const cardStyle = {
         transform: `translateX(${position.x}px) translateY(${position.y}px) rotate(${rotation}deg)`,
         transition: isDragging ? 'none' : 'transform 0.5s ease'
-    };
-
-    const infoStyle = {
-        height: showInfo ? '18rem' : '8rem',
-        transform: showInfo ? 'rotate(180deg)' : 'rotate(0deg)'
     };
 
     return (
@@ -209,67 +201,67 @@ const Tinder = () => {
                         </div>
                     )}
                     
-                    {/* Resume content with gradient overlay at bottom */}
-                    <div className={styles.resumeContainer}>
-                        <div className={styles.pdfContainer}>
-                            {pdfUrl ? (
+                    {/* Main content container with candidate info as primary */}
+                    <div className={styles.cardContent}>
+                        {/* Candidate Info Panel - Now the main component */}
+                        <div className={styles.candidateInfoPanel}>
+                            <div className={styles.candidateHeader}>
+                                <h2 className={styles.candidateName}>{candidateName}</h2>
+                                <p className={styles.candidateTitle}>{currentRole}, {currentCompany}, {candidateYears}</p>
+                                <div className={styles.locationWrapper}>
+                                    <p className={styles.candidateLocation}>{candidateLocation}</p>
+                                </div>
+                                
+                                <div className={styles.tagContainer}>
+                                    <span className={styles.tagHybrid}>Flexible</span>
+                                    <span className={styles.tagFullTime}>Full Time</span>
+                                </div>
+                                
+                                <div className={styles.tagContainer}>
+                                    <span className={styles.tagCompany}>Enterprise Experience</span>
+                                </div>
+                                
+                                <div className={styles.tagContainer}>
+                                    <span className={styles.tagIndustry}>Information Technology And Services</span>
+                                </div>
+                                
+                                <div className={styles.tagContainer}>
+                                    <span className={styles.tagEducation}>Bachelor's</span>
+                                    <span className={styles.tagLevel}>Mid Level</span>
+                                </div>
+                                
+                                <div className={styles.tagContainer}>
+                                    <span className={styles.tagHybrid}>React</span>
+                                    <span className={styles.tagFullTime}>TypeScript</span>
+                                    <span className={styles.tagCompany}>Node.js</span>
+                                    <span className={styles.tagEducation}>AWS</span>
+                                    <span className={styles.tagLevel}>Redux</span>
+                                </div>
+                                
+                                <div className={styles.tagContainer}>
+                                    <span className={styles.tagStatus}>New Applicant</span>
+                                </div>
+                                
+                                <button 
+                                    onClick={togglePdf}
+                                    className={styles.viewResumeBtn}
+                                >
+                                    <FileText size={18} className={styles.pdfIcon} />
+                                    {showPdf ? 'Hide Resume' : 'View Full Resume'}
+                                </button>
+                            </div>
+                        </div>
+                        
+                        {/* PDF Resume - Now expandable/collapsible */}
+                        {showPdf && (
+                            <div className={styles.pdfContainer}>
                                 <embed 
-                                    src={pdfUrl} 
+                                    src={staticPdfPath} 
                                     type="application/pdf"
                                     className={styles.pdfEmbed}
                                 />
-                            ) : (
-                                <div className={styles.noPdf}>
-                                    No resume available
-                                </div>
-                            )}
-                        </div>
-                        
-                        {/* Gradient overlay and user info */}
-                        <div 
-                            className={styles.infoOverlay}
-                            style={{height: infoStyle.height}}
-                        >
-                            <div className={styles.infoHeader}>
-                                <div>
-                                    <h2 className={styles.candidateName}>{candidateName}, {candidateAge}</h2>
-                                    <div className={styles.detailRow}>
-                                        <Briefcase size={16} className={styles.icon} />
-                                        <p>{jobDetails?.title || "Software Engineer"}</p>
-                                    </div>
-                                    <div className={styles.detailRow}>
-                                        <UserRound size={16} className={styles.icon} />
-                                        <p>{candidateLocation}</p>
-                                    </div>
-                                </div>
-                                <button 
-                                    onClick={toggleInfo}
-                                    className={styles.infoToggle}
-                                    style={{transform: infoStyle.transform}}
-                                >
-                                    <ChevronUp size={24} className={styles.chevron} />
-                                </button>
                             </div>
-                            
-                            {/* Additional info */}
-                            {showInfo && (
-                                <div className={styles.extraInfo}>
-                                    <p className={styles.bioText}>
-                                        Experience with React, Node.js, and AWS. Passionate about creating intuitive user experiences and scalable backend solutions.
-                                    </p>
-                                    <p className={styles.bioText}>
-                                        Looking for a challenging role in a creative environment where I can grow professionally.
-                                    </p>
-                                    <div className={styles.skillTags}>
-                                        <span className={styles.tag}>React</span>
-                                        <span className={styles.tag}>Node.js</span>
-                                        <span className={styles.tag}>TypeScript</span>
-                                        <span className={styles.tag}>AWS</span>
-                                        <span className={styles.tag}>UI/UX</span>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                        )}
                     </div>
                 </div>
                 
